@@ -2,13 +2,6 @@ server:
   port: 8000
 
 spring:
-  profiles:
-    active: local
-  application:
-    name: api-gateway
-  config:
-    import: optional:configserver:http://localhost:8888
-
   cloud:
     gateway:
       routes:
@@ -16,3 +9,19 @@ spring:
           uri: lb://auth-server
           predicates:
             - Path=/api/v1/auth/**
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://localhost:8888
+---
+spring:
+  profiles:
+    active: test
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://lovebugs-config-server:8888

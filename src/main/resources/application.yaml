@@ -1,5 +1,5 @@
 server:
-  port: 0
+  port: 8000
 
 spring:
   profiles:
@@ -7,4 +7,4 @@ spring:
   application:
     name: api-gateway
   config:
-    import: optional:configserver:http://config-server
+    import: optional:configserver:http://localhost:8888

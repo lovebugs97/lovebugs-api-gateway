@@ -4,11 +4,43 @@ server:
 spring:
   cloud:
     gateway:
+      default-filters:
+        - name: GlobalFilter
+          args:
+            preLogger: true
+            postLogger: true
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: 'http://localhost:3000'
+            allow-credentials: true
+            allowedHeaders:
+              - authorization
+              - Content-Type
+              - X-AUTH-TOKEN
+              - X-CSRF-TOKEN
+              - X-Requested-With
+              - credential
+            allowedMethods:
+              - POST
+              - GET
+              - PUT
+              - PATCH
+              - OPTIONS
+              - DELETE
+
       routes:
         - id: auth-server
-          uri: lb://auth-server
+          uri: lb://AUTH-SERVER
           predicates:
             - Path=/api/v1/auth/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
+            - CustomAuthFilter
+
+
 ---
 spring:
   profiles:
@@ -17,6 +49,12 @@ spring:
     name: api-gateway
   config:
     import: optional:configserver:http://localhost:8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway
 ---
 spring:
   profiles:

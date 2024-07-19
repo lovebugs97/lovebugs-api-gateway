@@ -12,26 +12,36 @@ import reactor.core.publisher.Mono
 
 
 @Component
-class CustomAuthFilter : AbstractGatewayFilterFactory<CustomAuthFilter.Config>(Config::class.java) {
+class CustomAccessTokenFilter : AbstractGatewayFilterFactory<CustomAccessTokenFilter.Config>(Config::class.java) {
     override fun apply(config: Config?): GatewayFilter {
         return (GatewayFilter { exchange: ServerWebExchange, chain: GatewayFilterChain ->
             val request: ServerHttpRequest = exchange.request
-            // Request Header 에 token 이 존재하지 않을 때
-            if (!request.headers.containsKey("x-auth-token")) {
-                return@GatewayFilter handleUnAuthorized(exchange) // 401 Error
-            }
+            val path = request.uri.path
 
-            // Request Header 에서 token 문자열 받아오기
-            val token = request.headers["x-auth-token"]
-            val tokenString = token?.get(0)!!
+            // 로그인 및 회원가입 경로 필터링 제외
+            if (!path.endsWith("/auth/v1/login") && !path.endsWith("/auth/v1/signup")) {
+                // Request Header 에 token 이 존재하지 않을 때
+                if (!request.headers.containsKey("Authorization")) {
+                    return@GatewayFilter handleUnAuthorized(exchange) // 401 Error
+                }
 
-            // 토큰 검증
-            if (tokenString != "A.B.C") {
-                return@GatewayFilter handleUnAuthorized(exchange) // 토큰이 일치하지 않을 때
+                // Request Header 에서 token 문자열 받아오기
+                val token = request.headers["Authorization"]
+                val tokenString = token?.get(0)!!
+
+                // 토큰 검증
+                if (!validateToken(tokenString)) {
+                    return@GatewayFilter handleUnAuthorized(exchange) // 토큰이 일치하지 않을 때
+                }
             }
 
             chain.filter(exchange) // 토큰이 일치할 때
         })
+    }
+
+    /* TODO: AccessToken 검증 로직 추가 */
+    private fun validateToken(tokenString: String?): Boolean {
+        return true
     }
 
     private fun handleUnAuthorized(exchange: ServerWebExchange): Mono<Void?> {

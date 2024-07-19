@@ -30,11 +30,11 @@ class GlobalFilter : AbstractGatewayFilterFactory<GlobalFilter.Config>(Config::c
             val response: ServerHttpResponse = exchange.response
 
             config.baseMessage?.let {
-                log.info("[Global PRE Filter] Base Message : {}", config.baseMessage)
+                log.info("[Global Filter PRE] Base Message : {}", config.baseMessage)
             }
 
             if (config.preLogger) {
-                log.info("[Global PRE Filter] request id : {}", request.id)
+                log.info("[Global Filter POST] requested endpoint : {}, request id : {}", request.path, request.headers)
             }
             // Global Pre Filter Scope =============================================================
 

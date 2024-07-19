@@ -16,12 +16,14 @@ spring:
             allowedOrigins: 'http://localhost:3000'
             allow-credentials: true
             allowedHeaders:
-              - authorization
+              - Authorization
+              - Credentials
               - Content-Type
               - X-AUTH-TOKEN
               - X-CSRF-TOKEN
               - X-Requested-With
-              - credential
+              - X-Forwarded-For
+              - X-Forwarded-Host
             allowedMethods:
               - POST
               - GET
@@ -34,11 +36,26 @@ spring:
         - id: auth-server
           uri: lb://AUTH-SERVER
           predicates:
-            - Path=/api/v1/auth/**
+            - Path=/api/auth-service/auth/v1/**
           filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/api/(?<segment>.*), /$\{segment}
-            - CustomAuthFilter
+            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
+            - CustomAccessTokenFilter
+
+        - id: auth-server-admin
+          uri: lb://AUTH-SERVER
+          predicates:
+            - Path=/api/auth-service/admin/v1/**
+          filters:
+            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
+            - CustomAccessTokenFilter
+
+        - id: auth-server-public
+          uri: lb://AUTH-SERVER
+          predicates:
+            - Path=/api/auth-service/auth/v1/login
+            - Path=/api/auth-service/auth/v1/signup
+          filters:
+            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
 
 
 ---

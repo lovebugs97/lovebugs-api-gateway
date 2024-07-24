@@ -29,19 +29,17 @@ class GlobalFilter : AbstractGatewayFilterFactory<GlobalFilter.Config>(Config::c
             val request: ServerHttpRequest = exchange.request
             val response: ServerHttpResponse = exchange.response
 
-            config.baseMessage?.let {
-                log.info("[Global Filter PRE] Base Message : {}", config.baseMessage)
-            }
+            config.baseMessage?.let { log.info("Base Message : {}", config.baseMessage) }
 
             if (config.preLogger) {
-                log.info("[Global Filter POST] requested endpoint : {}, request id : {}", request.path, request.headers)
+                log.info("requested endpoint : {}, request id : {}", request.path, request.headers)
             }
             // Global Pre Filter Scope =============================================================
 
             // Global Post Filter Scope ==========================================================
             return@GatewayFilter chain.filter(exchange).then(Mono.fromRunnable {
                 if (config.postLogger) {
-                    log.info("[Global POST Filter] Response Code : {}", response.statusCode)
+                    log.info("Response Code : {}", response.statusCode)
                 }
             })
             // Global Post Filter Scope =============================================================

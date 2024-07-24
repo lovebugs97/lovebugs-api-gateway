@@ -20,58 +20,43 @@ class AccessTokenValidationFilter(
 ) : AbstractGatewayFilterFactory<AccessTokenValidationFilter.Config>(Config::class.java) {
     companion object {
         private const val AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION
-        private const val AUTHORIZATION_PREFIX = "Bearer "
-        private val EXCLUDED_PATHS = setOf("/auth/v1/login", "/auth/v1/signup", "/auth/v1/logout", "/auth/v1/refresh")
+        private const val AUTHORIZATION_PREFIX = "Bearer"
         private val log = LoggerFactory.getLogger(AccessTokenValidationFilter::class.java)
     }
 
-    data class Config(
-        val baseMessage: String?,
-        val preLogger: Boolean,
-        val postLogger: Boolean
-    )
+    class Config
 
     override fun apply(config: Config): GatewayFilter {
         return GatewayFilter { exchange: ServerWebExchange, chain: GatewayFilterChain ->
             val request: ServerHttpRequest = exchange.request
-            val path = request.uri.path
+            val authHeader = request.headers.getFirst(AUTHORIZATION_HEADER)
 
-            // 제외할 경로에 포함되지 않는 경우 토큰 인증
-            if (EXCLUDED_PATHS.none { path.endsWith(it) }) {
-                val authHeader = request.headers.getFirst(AUTHORIZATION_HEADER)
-
-                // Request Header에 token이 존재하지 않을 때
-                if (authHeader == null || !authHeader.startsWith(AUTHORIZATION_PREFIX)) {
-                    return@GatewayFilter handleUnauthorized(exchange)
-                }
-
-                val token = authHeader.substring(AUTHORIZATION_PREFIX.length)
-
-                if (config.preLogger) {
-                    log.info("Token Validate Request $token")
-                }
-
-                webClient.post()
-                    .uri("/token/v1/validation")
-                    .bodyValue(mapOf("token" to token))
-                    .retrieve()
-                    .bodyToMono(Void::class.java)
-                    .then(chain.filter(exchange)) // 토큰이 유효할 때 필터 체인 계속 진행
-                    .onErrorResume {
-                        log.error("Error: ${it.message}")
-                        handleUnauthorized(exchange)
-                    }
-
-            } else {
-                // 필터링 제외 경로는 필터 체인 계속 진행
-                chain.filter(exchange)
+            // Request Header에 token이 존재하지 않을 때
+            if (authHeader == null || !authHeader.startsWith(AUTHORIZATION_PREFIX)) {
+                return@GatewayFilter handleBadRequest(exchange)
             }
+
+            val token = authHeader.replace(AUTHORIZATION_PREFIX, "").trim()
+
+            webClient.post()
+                .uri("/token/v1/validation")
+                .headers { it.set(AUTHORIZATION_HEADER, "$AUTHORIZATION_PREFIX $token") }
+                .retrieve()
+                .bodyToMono(Void::class.java)
+                .then(chain.filter(exchange)) // 토큰이 유효할 때 필터 체인 계속 진행
+                .onErrorResume {
+                    log.error("Error: ${it.message}")
+                    handleBadRequest(exchange)
+                }
+
+            // 필터링 제외 경로는 필터 체인 계속 진행
+            chain.filter(exchange)
         }
     }
 
-    private fun handleUnauthorized(exchange: ServerWebExchange): Mono<Void> {
+    private fun handleBadRequest(exchange: ServerWebExchange): Mono<Void> {
         val response: ServerHttpResponse = exchange.response
-        response.statusCode = HttpStatus.UNAUTHORIZED
+        response.statusCode = HttpStatus.BAD_REQUEST
         return response.setComplete()
     }
 }

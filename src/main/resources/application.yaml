@@ -10,11 +10,6 @@ spring:
             preLogger: true
             postLogger: true
 
-        - name: AccessTokenValidationFilter
-          args:
-            preLogger: true
-            postLogger: false
-
       globalcors:
         cors-configurations:
           '[/**]':
@@ -22,7 +17,6 @@ spring:
             allow-credentials: true
             allowedHeaders:
               - Authorization
-              - RefreshToken
               - Credentials
               - Content-Type
               - X-AUTH-TOKEN
@@ -39,12 +33,14 @@ spring:
               - DELETE
 
       routes:
+        # ------------------- Auth Service Start ------------------------------
         - id: auth-server-admin
           uri: lb://AUTH-SERVER
           predicates:
             - Path=/api/auth-service/admin/v1/**
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
+            - AccessTokenValidationFilter
 
         - id: auth-server-auth
           uri: lb://AUTH-SERVER
@@ -59,6 +55,7 @@ spring:
             - Path=/api/auth-service/member/v1/**
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
+            - AccessTokenValidationFilter
 
         - id: auth-server-token
           uri: lb://AUTH-SERVER
@@ -66,6 +63,8 @@ spring:
             - Path=/api/auth-service/token/v1/**
           filters:
             - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
+        # ------------------- Auth Service End ------------------------------
+
 
 ---
 spring:

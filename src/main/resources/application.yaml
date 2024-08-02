@@ -5,7 +5,7 @@ spring:
   cloud:
     gateway:
       default-filters:
-        - name: GlobalFilter
+        - name: GlobalLoggingFilter
           args:
             preLogger: true
             postLogger: true
@@ -17,13 +17,8 @@ spring:
             allow-credentials: true
             allowedHeaders:
               - Authorization
-              - Credentials
               - Content-Type
-              - X-AUTH-TOKEN
-              - X-CSRF-TOKEN
-              - X-Requested-With
               - X-Forwarded-For
-              - X-Forwarded-Host
             allowedMethods:
               - POST
               - GET
@@ -31,52 +26,16 @@ spring:
               - PATCH
               - OPTIONS
               - DELETE
-
       routes:
         # ------------------- Auth Service Start ------------------------------
-        - id: auth-server-admin
+        - id: auth-server
           uri: lb://AUTH-SERVER
           predicates:
-            - Path=/api/auth-service/admin/v1/**
+            - Path=/api/v1/auth-service/**
           filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
-            - AccessTokenValidationFilter
-
-        - id: auth-server-auth
-          uri: lb://AUTH-SERVER
-          predicates:
-            - Path=/api/auth-service/auth/v1/**
-          filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
-
-        - id: auth-server-member
-          uri: lb://AUTH-SERVER
-          predicates:
-            - Path=/api/auth-service/member/v1/**
-          filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
-            - AccessTokenValidationFilter
-
-        - id: auth-server-token
-          uri: lb://AUTH-SERVER
-          predicates:
-            - Path=/api/auth-service/token/v1/**
-          filters:
-            - RewritePath=/api/auth-service/(?<segment>.*), /$\{segment}
-            - AccessTokenValidationFilter
+            - RewritePath=/api/v1/auth-service/(?<segment>.*), /$\{segment}
+            - JwtAuthFilter
         # ------------------- Auth Service End ------------------------------
-
-        # ------------------- Admin Service Start ------------------------------
-        - id: admin-server
-          uri: lb://ADMIN-SERVER
-          predicates:
-            - Path=/api/admin-service/**
-          filters:
-            - RewritePath=/api/admin-service/(?<segment>.*), /$\{segment}
-            - AccessTokenValidationFilter
-        # ------------------- Admin Service End ------------------------------
-
-
 ---
 spring:
   profiles:

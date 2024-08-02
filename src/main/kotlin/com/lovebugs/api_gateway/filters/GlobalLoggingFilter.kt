@@ -1,4 +1,4 @@
-package com.lovebugs.api_gateway
+package com.lovebugs.api_gateway.filters
 
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.gateway.filter.GatewayFilter
@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
-class GlobalFilter : AbstractGatewayFilterFactory<GlobalFilter.Config>(Config::class.java) {
+@Order(Ordered.LOWEST_PRECEDENCE)
+class GlobalLoggingFilter : AbstractGatewayFilterFactory<GlobalLoggingFilter.Config>(Config::class.java) {
     data class Config(
         val baseMessage: String?,
         val preLogger: Boolean,
@@ -20,7 +20,7 @@ class GlobalFilter : AbstractGatewayFilterFactory<GlobalFilter.Config>(Config::c
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(GlobalFilter::class.java)
+        private val log = LoggerFactory.getLogger(GlobalLoggingFilter::class.java)
     }
 
     override fun apply(config: Config): GatewayFilter {

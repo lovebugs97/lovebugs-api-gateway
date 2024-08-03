@@ -24,7 +24,7 @@ class JwtAuthFilter(
 ) : AbstractGatewayFilterFactory<JwtAuthFilter.Config>(Config::class.java) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(JwtAuthFilter::class.java)
-        private val NO_CHECK_ENDPOINT = listOf("/auth")
+        private val NO_CHECK_ENDPOINT = listOf("/auth", "/token/reissue")
     }
 
     override fun apply(config: Config?): GatewayFilter {
@@ -62,13 +62,10 @@ class JwtAuthFilter(
 
                     val email = claims["email"].toString()
                     val authorities = claims["authorities"].toString()
-
-                    logger.info("Email: {}", email)
-                    logger.info("Authorities: {}", authorities)
+                    logger.info("Email: {}, Authorities: {}", email, authorities)
 
                     exchange.request.mutate().header("email", email).build()
                     exchange.request.mutate().header("authorities", authorities).build()
-
                 } catch (e: Exception) {
                     logger.error(e.message)
                     exchange.response.statusCode = HttpStatus.UNAUTHORIZED
